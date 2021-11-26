@@ -1,0 +1,63 @@
+{"filiali": {   
+    "1": {
+        "title": "Via Roma 28, Nola, NA",
+        "email": "filiale01@fratellimorgese.com",
+        "cassa": 
+            {
+                "1": [
+                    "192.168.34.111",
+                    "e1901",
+                    "2CITP002912"
+                ],
+                "2": [
+                    "e1902",
+                    "192.168.1.124",
+                    "2CITP003073"
+                ]
+            }
+        },
+    "2": {
+        "title": "Via Roma 83, Portici, NA",
+        "email": "filiale02@fratellimorgese.com",
+        "cassa": 
+            {
+                "1": [
+                    "e401",
+                    "192.168.1.1",
+                    "2CITP001639"
+                ],
+                "2": [
+                    "e402",
+                    "192.168.1.2",
+                    "2CITP003074"
+                ],
+                "3": [
+                    "403",
+                    "192.168.1.3",
+                    "2CITP003079"
+                ]
+            }
+        },
+    "4": {
+        "title": "Via Benvenuto Cellini 19, Portici, NA",
+        "email": "filiale04@fratellimorgese.com",
+        "cassa": 
+        {
+                "1": [
+                "e201",
+                "192.168.1.41",
+                "2CITP001639"
+                ],
+                "2": [
+                "e202",
+                "192.168.1.42",
+                "2CITP003074"
+                ],
+                "3": [
+                "e203",
+                "192.168.1.43",
+                "2CITP003079"
+                ]
+        }
+    }
+}}  
