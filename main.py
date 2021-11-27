@@ -7,6 +7,19 @@ import time
 from datetime import datetime
 import tempfile
 
+
+
+def userInput(param):
+    userinput = input(param).lower()
+    while str(userinput) != "x" and str(userinput) != "y" and str(userinput) != "":
+        print("\n[-] You must enter Y or X!\n")
+        userinput = input(param).lower()
+    if str(userinput) == "x":
+        return False
+    if str(userinput) == "y" or str(userinput) == "":
+        return True
+
+
 def validateDate():
     while True:
         try:
@@ -89,17 +102,20 @@ start = validateDate()
 print("\n[+] Data fine: ") 
 end = validateDate()
 
-print("\n[+] Recupero PPOS/run: ") 
-dir = r"\c-drive\PPOS\RUN"
-recuperoFile(dir)
+if userInput(param="[?] Vuoi recuperare la PPOS/run? ") == True:
+    print("\n[+] Recupero PPOS/run: ") 
+    dir = r"\c-drive\PPOS\RUN"
+    recuperoFile(dir)
 
-print("\n[+] Recupero Overgate log: ") 
-dir = r"\c-drive"
-recuperoFile(dir)
-
-print("\n[+] Recupero FiscalPrinter log: ") 
-dir = r"\c-drive\Log\DitronRT"
-recuperoFile(dir)
+if userInput(param="[?] Vuoi recuperare i log di Overgate?  ") == True:
+    print("\n[+] Recupero Overgate log: ") 
+    dir = r"\c-drive"
+    recuperoFile(dir)
+    
+if userInput(param="[?] Vuoi recuperare i log della stampante?  ") == True:
+    print("\n[+] Recupero FiscalPrinter log: ") 
+    dir = r"\c-drive\Log\DitronRT"
+    recuperoFile(dir)
 
 
 if len(os.listdir(temp.name)) == 0:
