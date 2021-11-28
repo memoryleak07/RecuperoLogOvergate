@@ -30,18 +30,6 @@ def validateDate():
             print("\n[X] You must insert date in this format dd/mm/YYYY", ValueError, "\n")
 
 
-def dateRange(createddate, startdate, enddate):
-    #determines if date is in range
-    createddate = datetime.strptime(createddate, '%a %b %d %H:%M:%S %Y')
-    startdate = datetime.strptime(startdate, '%d/%m/%Y')
-    enddate = datetime.strptime(enddate, '%d/%m/%Y').replace(hour=23, minute=59, second=59)
-    return startdate < createddate < enddate
-
-
-def createTempDir():
-    with tempfile.TemporaryDirectory(dir="C:\Ditron") as tmpdirname:
-        print('created temporary directory', tmpdirname)
-
 def getPvInfo():
     with open("m.json") as jsondata:
         data = json.load(jsondata)
@@ -61,7 +49,15 @@ def getPvInfo():
     return (r"\\" + (fil[filiale]["cassa"][numerocassa][0]))
 
 
-def recuperoFile(dir):
+def dateRange(createddate, startdate, enddate):
+    #determines if date is in range
+    createddate = datetime.strptime(createddate, '%a %b %d %H:%M:%S %Y')
+    startdate = datetime.strptime(startdate, '%d/%m/%Y')
+    enddate = datetime.strptime(enddate, '%d/%m/%Y').replace(hour=23, minute=59, second=59)
+    return startdate < createddate < enddate
+
+
+def recuperoPPOS(dir):
     ovgpath= os.path.join(ip+dir)
     for filename in os.listdir(ovgpath):
         files = os.path.join(ovgpath+"\\"+filename)
@@ -69,16 +65,32 @@ def recuperoFile(dir):
         created = time.ctime(os.path.getmtime(files))
         if dateRange(created, start, end):
             try:
-                if dateRange(created, start, end):
-                    shutil.copy2(files, temp.name)
-                    print("[<<] File transferred " + filename + created, " ")
-                else:
-                    pass
-                    #print("[+] File not transferred " + filename + created)
+                shutil.copy2(files, temp.name)
+                print("[<<] File transferred " + filename + created, " ")
             except (os.error, Exception) as err:
                 print("[X] File not transferred " + filename, err)
+        else:
+            pass
+            #print("[+] File not transferred " + filename + created)
     print("\n[+] Transfer complete")
 
+
+def recuperoFile(dir, name, ext):
+    ovgpath= os.path.join(ip+dir)
+    for filename in os.listdir(ovgpath):
+        files = os.path.join(ovgpath+"\\"+filename)
+        #print(files)
+        created = time.ctime(os.path.getmtime(files))
+        if dateRange(created, start, end) and filename.startswith(name) and filename.endswith(ext):
+            try:
+                shutil.copy2(files, temp.name)
+                print("[<<] File transferred " + filename + created, " ")
+            except (os.error, Exception) as err:
+                print("[X] File not transferred " + filename, err)
+        else:
+            pass
+            #print("[+] File not transferred " + filename + created)
+    print("\n[+] Transfer complete")
 
 
 # createTempDir()
@@ -91,40 +103,38 @@ today = datetime.today().strftime('%Y%m%d%H%M%S')
 maindir = r"C:\Ditron"
 temp = tempfile.TemporaryDirectory(dir=maindir)
 
-ip = getPvInfo()
+try:
+    ip = getPvInfo()
+    cmd = 'NET USE ' + ip + ' /User:' + username + ' ' + password
+    subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 
-cmd = 'NET USE ' + ip + ' /User:' + username + ' ' + password
-subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+    print("\n[+] Data inizio: ") 
+    start = validateDate()
 
-print("\n[+] Data inizio: ") 
-start = validateDate()
+    print("\n[+] Data fine: ") 
+    end = validateDate()
 
-print("\n[+] Data fine: ") 
-end = validateDate()
+    if userInput(param="[?] Vuoi recuperare la PPOS/run? ") == True:
+        print("\n[+] Recupero PPOS/run: ") 
+        dir = r"\c-drive\PPOS\RUN"
+        recuperoPPOS(dir)
 
-if userInput(param="[?] Vuoi recuperare la PPOS/run? ") == True:
-    print("\n[+] Recupero PPOS/run: ") 
-    dir = r"\c-drive\PPOS\RUN"
-    recuperoFile(dir)
+    if userInput(param="[?] Vuoi recuperare i log di Overgate?  ") == True:
+        print("\n[+] Recupero Overgate log: ") 
+        recuperoFile(dir = r"\c-drive", name="Trace", ext="txt")
+        
+    if userInput(param="[?] Vuoi recuperare i log della stampante?  ") == True:
+        print("\n[+] Recupero FiscalPrinter log: ") 
+        recuperoFile(dir=r"\c-drive\Log\DitronRT", name="Ditron", ext="log")
 
-if userInput(param="[?] Vuoi recuperare i log di Overgate?  ") == True:
-    print("\n[+] Recupero Overgate log: ") 
-    dir = r"\c-drive"
-    recuperoFile(dir)
-    
-if userInput(param="[?] Vuoi recuperare i log della stampante?  ") == True:
-    print("\n[+] Recupero FiscalPrinter log: ") 
-    dir = r"\c-drive\Log\DitronRT"
-    recuperoFile(dir)
-
-
-if len(os.listdir(temp.name)) == 0:
-    input("\n[X] NOT OK! Some errors occured during the process\n[>] Press any key to exit program: \n")
-    sys.exit() 
-else:
-    print("\n[+] Zipping files .. ")
-    zipfile = "fil" + today
-    zip = shutil.make_archive(os.path.join(maindir, zipfile), 'zip', temp.name)
-    print("\n[+] Zip file is: \n\n"+ zip)
-    input("\n[+] OK! Job done!\n[>] Press any key to exit program: \n")
-
+    if len(os.listdir(temp.name)) == 0:
+        input("\n[X] NOT OK! Some errors occured during the process\n[>] Press any key to exit program: \n")
+        sys.exit() 
+    else:
+        print("\n[+] Zipping files .. ")
+        zipfile = "fil" + today
+        zip = shutil.make_archive(os.path.join(maindir, zipfile), 'zip', temp.name)
+        print("\n[+] Zip file is: \n\n"+ zip)
+        input("\n[+] OK! Job done!\n[>] Press any key to exit program: \n")
+except KeyboardInterrupt as kerr:
+    print(kerr)
