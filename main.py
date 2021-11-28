@@ -6,6 +6,7 @@ import subprocess
 import time
 from datetime import datetime
 import tempfile
+import ftplib
 
 
 
@@ -93,6 +94,18 @@ def recuperoFile(dir, name, ext):
     print("\n[+] Transfer complete")
 
 
+def trasferisciFTP():
+    session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
+    session.cwd("Retail/temp")
+    dir = "/home/ml/Desktop/repo/SMExportApp-main/SMExportApp-main/test.json"
+    filename = "test.json"
+    with open(dir, "rb") as file:
+        session.storbinary('STOR {}'.format(filename), file)# send the file
+        print
+    session.dir()
+    session.quit()
+
+
 # createTempDir()
 # with tempfile.TemporaryDirectory(dir="C:\Ditron") as tmpdirname:
 #     print('created temporary directory', tmpdirname)
@@ -136,5 +149,10 @@ try:
         zip = shutil.make_archive(os.path.join(maindir, zipfile), 'zip', temp.name)
         print("\n[+] Zip file is: \n\n"+ zip)
         input("\n[+] OK! Job done!\n[>] Press any key to exit program: \n")
+    
+    if userInput(param="[?] Vuoi caricare il file zip in pos.ditronetwrok/public/Retail/temp ?  ") == True:
+        print("\n[+] Uploading file zip: ") 
+        trasferisciFTP()
+
 except KeyboardInterrupt as kerr:
     print(kerr)
