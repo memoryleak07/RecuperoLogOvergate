@@ -9,6 +9,11 @@ import tempfile
 import ftplib
 
 
+def renameTempDir(tempname, nomefile, maindir):
+    os.rename(tempname, nomefile)
+    shutil.move(nomefile, os.path.join(maindir, nomefile))
+    print("Cartella temporanea rinominata: ", os.path.join(maindir, nomefile))
+
 
 def userInput(param):
     userinput = input(param).lower()
@@ -24,34 +29,37 @@ def userInput(param):
 def validateDate():
     while True:
         try:
-            date = input("[>>] Insert date in this format dd/mm/YYYY\n")
+            date = input("[>>] Insert date in this format dd/mm/YYYY: \n")
             datetime.strptime(date, '%d/%m/%Y')
             return date
         except ValueError:
-            print("\n[X] You must insert date in this format dd/mm/YYYY", ValueError, "\n")
+            print("\n[X] You must insert date in this format dd/mm/YYYY!", ValueError, "\n")
 
 
 def getPvInfo():
+    #Ritorna una tupla con IP della cassa e numero della filiale
     with open("m.json") as jsondata:
         data = json.load(jsondata)
         fil = data["filiali"]
-
     filiale = input("\n[+] Numero della filiale: \n")
     if filiale not in fil:
         raise ValueError("[X] Nessuna filiale trovata")
-    print("\n", fil[filiale]["title"])
+    numerofiliale = filiale
     filiale = fil[filiale]
+    titolofiliale = filiale["title"]
+    print("\n Filiale numero: ", numerofiliale, "\nTitolo: ", titolofiliale)
 
     numerocassa = input("\n[+] Numero della cassa: \n")
-    for val in fil[filiale]["cassa"]:
-        if numerocassa not in fil[filiale]["cassa"]:
+    for val in (filiale["cassa"]):
+        if numerocassa not in filiale["cassa"]:
                 raise ValueError("[X] Nessuna cassa trovata")
-    print("\n", fil[filiale]["cassa"][numerocassa])
-    return (r"\\" + (fil[filiale]["cassa"][numerocassa][0]))
+    ip = r"\\" + (filiale["cassa"][numerocassa][0])
+    print("\n IP: ", ip)
 
+    return(ip, numerofiliale)
 
 def dateRange(createddate, startdate, enddate):
-    #determines if date is in range
+    #Ritorna True se si trova nel range di date
     createddate = datetime.strptime(createddate, '%a %b %d %H:%M:%S %Y')
     startdate = datetime.strptime(startdate, '%d/%m/%Y')
     enddate = datetime.strptime(enddate, '%d/%m/%Y').replace(hour=23, minute=59, second=59)
@@ -62,7 +70,6 @@ def recuperoPPOS(dir):
     ovgpath= os.path.join(ip+dir)
     for filename in os.listdir(ovgpath):
         files = os.path.join(ovgpath+"\\"+filename)
-        #print(files)
         created = time.ctime(os.path.getmtime(files))
         if dateRange(created, start, end):
             try:
@@ -80,7 +87,6 @@ def recuperoFile(dir, name, ext):
     ovgpath= os.path.join(ip+dir)
     for filename in os.listdir(ovgpath):
         files = os.path.join(ovgpath+"\\"+filename)
-        #print(files)
         created = time.ctime(os.path.getmtime(files))
         if dateRange(created, start, end) and filename.startswith(name) and filename.endswith(ext):
             try:
@@ -94,31 +100,32 @@ def recuperoFile(dir, name, ext):
     print("\n[+] Transfer complete")
 
 
-def trasferisciFTP():
-    session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
-    session.cwd("Retail/temp")
-    dir = "/home/ml/Desktop/repo/SMExportApp-main/SMExportApp-main/test.json"
-    filename = "test.json"
-    with open(dir, "rb") as file:
-        session.storbinary('STOR {}'.format(filename), file)# send the file
-        print
-    session.dir()
-    session.quit()
+def trasferisciFTP(dir, filename):
+    try:
+        session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
+        #session = ftplib.FTP('10.10.10.244',"ditronetwork","Kr0wteN0rt!d")
+        session.cwd("Retail/temp")
+        with open(dir, "rb") as file:
+            session.storbinary('STOR {}'.format(filename), file) # send the file
+            print("[+] File caricato con successo!\n")
+        session.quit()
+    except ftplib.all_errors as err:
+        print(err)
 
 
-# createTempDir()
-# with tempfile.TemporaryDirectory(dir="C:\Ditron") as tmpdirname:
-#     print('created temporary directory', tmpdirname)
 
-username = "ditronpos"
-password = "sopnortid"
-today = datetime.today().strftime('%Y%m%d%H%M%S')
 maindir = r"C:\Ditron"
+today = datetime.today().strftime('%Y%m%d%H%M%S')
 temp = tempfile.TemporaryDirectory(dir=maindir)
 
 try:
-    ip = getPvInfo()
-    cmd = 'NET USE ' + ip + ' /User:' + username + ' ' + password
+    print("\n *** Lo script copia in una cartella tempoaranea in C:\Ditron ***\n Enter o Y per confermare, X per rifiutare\n")
+
+    getpvinfo = getPvInfo()
+    ip = getpvinfo[0]
+    numerofiliale = getpvinfo[1]
+
+    cmd = 'NET USE ' + ip + ' /User:' + "ditronpos" + ' ' + "sopnortid"
     subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 
     print("\n[+] Data inizio: ") 
@@ -127,32 +134,38 @@ try:
     print("\n[+] Data fine: ") 
     end = validateDate()
 
-    if userInput(param="[?] Vuoi recuperare la PPOS/run? ") == True:
-        print("\n[+] Recupero PPOS/run: ") 
-        dir = r"\c-drive\PPOS\RUN"
-        recuperoPPOS(dir)
+    if userInput(param="\n[?] Vuoi recuperare la PPOS/run? ") == True:
+        print("\n[+] Recupero PPOS/run... ") 
+        recuperoPPOS(dir=r"\c-drive\PPOS\RUN")
 
-    if userInput(param="[?] Vuoi recuperare i log di Overgate?  ") == True:
-        print("\n[+] Recupero Overgate log: ") 
-        recuperoFile(dir = r"\c-drive", name="Trace", ext="txt")
+    if userInput(param="\n[?] Vuoi recuperare i log di Overgate?  ") == True:
+        print("\n[+] Recupero Overgate log... ") 
+        recuperoFile(dir=r"\c-drive", name="Trace", ext="txt")
         
-    if userInput(param="[?] Vuoi recuperare i log della stampante?  ") == True:
-        print("\n[+] Recupero FiscalPrinter log: ") 
-        recuperoFile(dir=r"\c-drive\Log\DitronRT", name="Ditron", ext="log")
+    if userInput(param="\n[?] Vuoi recuperare i log della stampante?  ") == True:
+        print("\n[+] Recupero FiscalPrinter log... ") 
+        recuperoFile(dir=r"\c-drive\Log\DitronRT", name="RTF", ext="log")
 
     if len(os.listdir(temp.name)) == 0:
-        input("\n[X] NOT OK! Some errors occured during the process\n[>] Press any key to exit program: \n")
+        #Controllo se la cartella temporanea è vuota esce
+        input("\n[X] NOT OK! La cartella di destinazione risulta vuota!\n[>] Press any key to exit program: \n")
         sys.exit() 
     else:
-        print("\n[+] Zipping files .. ")
-        zipfile = "fil" + today
-        zip = shutil.make_archive(os.path.join(maindir, zipfile), 'zip', temp.name)
-        print("\n[+] Zip file is: \n\n"+ zip)
-        input("\n[+] OK! Job done!\n[>] Press any key to exit program: \n")
-    
-    if userInput(param="[?] Vuoi caricare il file zip in pos.ditronetwrok/public/Retail/temp ?  ") == True:
-        print("\n[+] Uploading file zip: ") 
-        trasferisciFTP()
+        nomefile = "fil" + numerofiliale + "_" + today
+        if userInput(param="\n[?] Vuoi zippare la cartella di destinazione?  ") == True:
+            print("\n[+] Zipping files... ")
+            zip = shutil.make_archive(os.path.join(maindir, nomefile), 'zip', temp.name)
+            print("[+] OK! Zip file is: " + zip)
+
+            if userInput(param="\n[?] Vuoi caricare il file zip in pos.ditronetwrok/public/Retail/temp ?  ") == True:
+                print("\n[+] Uploading file zip...") 
+                trasferisciFTP(dir=zip, filename=nomefile)
+            else:
+                renameTempDir(temp.name, nomefile, maindir)
+        else:
+            renameTempDir(temp.name, nomefile, maindir)
+
+    input("\n[+] OK! Finito.\n[>] Press any key to exit program: \n")
 
 except KeyboardInterrupt as kerr:
     print(kerr)
