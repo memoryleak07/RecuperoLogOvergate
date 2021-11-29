@@ -107,11 +107,10 @@ def trasferisciFTP(dir, filename):
         session.cwd("Retail/temp")
         with open(dir, "rb") as file:
             session.storbinary('STOR {}'.format(filename), file) # send the file
-            print("[+] File caricato con successo!\n")
         session.quit()
+        return True
     except ftplib.all_errors as err:
-        print(err)
-
+        return err
 
 
 maindir = r"C:\Ditron"
@@ -119,7 +118,7 @@ today = datetime.today().strftime('%Y%m%d%H%M%S')
 temp = tempfile.TemporaryDirectory(dir=maindir)
 
 try:
-    print("\n *** Lo script copia in una cartella tempoaranea in C:\Ditron ***\n Enter o Y per confermare, X per rifiutare\n")
+    print("\n\n*** Lo script copia in una cartella tempoaranea in C:\Ditron ***\n Enter o Y per confermare, X per rifiutare\n")
 
     getpvinfo = getPvInfo()
     ip = getpvinfo[0]
@@ -159,7 +158,8 @@ try:
 
             if userInput(param="\n[?] Vuoi caricare il file zip in pos.ditronetwrok/public/Retail/temp ?  ") == True:
                 print("\n[+] Uploading file zip...") 
-                trasferisciFTP(dir=zip, filename=nomefile)
+                if trasferisciFTP(dir=zip, filename=nomefile):
+                    print("[+] File caricato con successo!\n")
             else:
                 renameTempDir(temp.name, nomefile, maindir)
         else:
