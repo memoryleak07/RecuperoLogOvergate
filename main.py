@@ -169,3 +169,21 @@ try:
 
 except KeyboardInterrupt as kerr:
     print(kerr)
+
+    
+    
+# def trasferisciFTP():
+#     from tqdm import tqdm
+#     try:
+#         session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
+#         session.cwd("Retail/temp")
+#         dir = "/home/ml/Desktop/repo/SMExportApp-main/SMExportApp-main/test.json"
+#         filename = "test.json"
+#         filesize = os.path.getsize(dir)
+#         with open(dir, "rb") as file:
+#             with tqdm(unit = 'blocks', unit_scale = True, leave = False, miniters = 1, desc = 'Uploading......', total = filesize) as tqdm_instance:
+#                 session.storbinary('STOR {}'.format(filename), file, 2048, callback = lambda sent: tqdm_instance.update(len(sent)))
+#         session.dir()
+#         session.quit()
+#     except ftplib.all_errors as err:
+#         return (err)
