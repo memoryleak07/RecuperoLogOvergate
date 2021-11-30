@@ -9,6 +9,68 @@ import tempfile
 import ftplib
 
 
+
+def downloadUPDFile():
+    try:
+        cwd = os.getcwd()
+        #session = ftplib.FTP('10.10.10.244',"ditronetwork","Kr0wteN0rt!d")
+        session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
+        session.cwd("Retail/temp")
+        filenames = session.nlst()
+        os.chdir(maindir)
+        for filename in filenames:
+            #if filename.startswith("UPD"):
+            if filename.startswith("fil"):
+                print("[+] File found: ", filename)
+                try:
+                    with open(filename, 'wb') as file :
+                        res = session.retrbinary('RETR %s' % filename, file.write)
+                        print("[<<]", str(res), "in", maindir)
+                        file.close()
+                except Exception as err:
+                    print("Failed to download file", err)
+            else:
+                print("Filename not match:", filename)
+        os.chdir(cwd)
+    except ftplib.all_errors as err:
+        print (err)
+
+
+# Progress bar
+# def trasferisciFTP(dir, filename):
+#     from tqdm import tqdm
+#     try:
+#         #session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
+#         session = ftplib.FTP('10.10.10.244',"ditronetwork","Kr0wteN0rt!d")
+#         session.cwd("Retail/temp")
+#         filesize = os.path.getsize(dir)
+#         with open(dir, "rb") as file:
+#             #session.storbinary('STOR {}'.format(filename), file) # send the file
+#             with tqdm(unit = 'blocks', unit_scale = True, leave = False, miniters = 1, desc = 'Uploading...', total = filesize) as tqdm_instance:
+#                 res = session.storbinary('STOR {}'.format(filename), file, 2048, callback = lambda sent: tqdm_instance.update(len(sent)))
+#                 print(str(res))
+#         session.quit()
+#         return True
+#     except ftplib.all_errors as err:
+#         print (err)
+#         return False
+
+
+def trasferisciFTP(dir, filename):
+    try:
+        session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
+        #session = ftplib.FTP('10.10.10.244',"ditronetwork","Kr0wteN0rt!d")
+        session.cwd("Retail/temp")
+        with open(dir, "rb") as file:
+            res = session.storbinary('STOR {}'.format(filename), file) # send the file
+            print("[<<]", str(res))
+        session.quit()
+        return True
+    except ftplib.all_errors as err:
+        print (err)
+        return False
+
+
 def renameTempDir(tempname, nomefile, maindir):
     os.rename(tempname, nomefile)
     shutil.move(nomefile, os.path.join(maindir, nomefile))
@@ -58,6 +120,7 @@ def getPvInfo():
 
     return(ip, numerofiliale)
 
+
 def dateRange(createddate, startdate, enddate):
     #Ritorna True se si trova nel range di date
     createddate = datetime.strptime(createddate, '%a %b %d %H:%M:%S %Y')
@@ -100,25 +163,20 @@ def recuperoFile(dir, name, ext):
     print("\n[+] Transfer complete")
 
 
-def trasferisciFTP(dir, filename):
-    try:
-        session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
-        #session = ftplib.FTP('10.10.10.244',"ditronetwork","Kr0wteN0rt!d")
-        session.cwd("Retail/temp")
-        with open(dir, "rb") as file:
-            session.storbinary('STOR {}'.format(filename), file) # send the file
-        session.quit()
-        return True
-    except ftplib.all_errors as err:
-        return err
-
 
 maindir = r"C:\Ditron"
 today = datetime.today().strftime('%Y%m%d%H%M%S')
 temp = tempfile.TemporaryDirectory(dir=maindir)
 
 try:
-    print("\n\n*** Lo script copia in una cartella tempoaranea in C:\Ditron ***\n Enter o Y per confermare, X per rifiutare\n")
+    print("\n\n*** RECUPERO LOG OVERGATE ***")
+    print("*** Premere Enter o Y per confermare, X per rifiutare, CTRL+C per uscire ***\n")
+
+    if userInput(param="\n[?] Vuoi scaricare il file UPD* dalla /temp? ") == True:
+        print("\n[+] Checking for files..  ") 
+        downloadUPDFile()
+
+    print("\n\n*** Lo script copia in una cartella tempoaranea in C:\Ditron ***\n Enter o Y per confermare, X per rifiutare\n\n")
 
     getpvinfo = getPvInfo()
     ip = getpvinfo[0]
@@ -147,7 +205,7 @@ try:
 
     if len(os.listdir(temp.name)) == 0:
         #Controllo se la cartella temporanea è vuota esce
-        input("\n[X] NOT OK! La cartella di destinazione risulta vuota!\n[>] Press any key to exit program: \n")
+        input("\n[X] NOT OK! La cartella di destinazione risulta vuota!\n[>>] Press any key to exit program: \n")
         sys.exit() 
     else:
         nomefile = "fil" + numerofiliale + "_" + today
@@ -158,32 +216,14 @@ try:
 
             if userInput(param="\n[?] Vuoi caricare il file zip in pos.ditronetwrok/public/Retail/temp ?  ") == True:
                 print("\n[+] Uploading file zip...") 
-                if trasferisciFTP(dir=zip, filename=nomefile):
+                if trasferisciFTP(dir=zip, filename=nomefile) == True:
                     print("[+] File caricato con successo!\n")
             else:
                 renameTempDir(temp.name, nomefile, maindir)
         else:
             renameTempDir(temp.name, nomefile, maindir)
 
-    input("\n[+] OK! Finito.\n[>] Press any key to exit program: \n")
+    input("\n[+] Fine.\n[>>] Press any key to exit program: \n")
 
 except KeyboardInterrupt as kerr:
     print(kerr)
-
-    
-    
-# def trasferisciFTP():
-#     from tqdm import tqdm
-#     try:
-#         session = ftplib.FTP('pos.ditronetwork.com',"ditronetwork","Kr0wteN0rt!d")
-#         session.cwd("Retail/temp")
-#         dir = "/home/ml/Desktop/repo/SMExportApp-main/SMExportApp-main/test.json"
-#         filename = "test.json"
-#         filesize = os.path.getsize(dir)
-#         with open(dir, "rb") as file:
-#             with tqdm(unit = 'blocks', unit_scale = True, leave = False, miniters = 1, desc = 'Uploading......', total = filesize) as tqdm_instance:
-#                 session.storbinary('STOR {}'.format(filename), file, 2048, callback = lambda sent: tqdm_instance.update(len(sent)))
-#         session.dir()
-#         session.quit()
-#     except ftplib.all_errors as err:
-#         return (err)
